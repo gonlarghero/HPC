@@ -91,8 +91,8 @@ public class window {
 		btnNewButton.setBackground(new Color(250, 128, 114));
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String result = c.attack();
-				JOptionPane.showInternalMessageDialog(null, result, "Resultado", JOptionPane.INFORMATION_MESSAGE);
+				String result = c.attack(1);
+				JOptionPane.showMessageDialog(null, result, "Resultado", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 		btnNewButton.setBounds(33, 177, 97, 36);
