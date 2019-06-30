@@ -57,6 +57,7 @@ public class HpcAttack {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void generateSizeCombinations(ArrayList<Double> list, int n, int lenght) {
         if (n == lenght) {
         	sizeCombinations.get(lenght - 1).add((ArrayList<Double>)list.clone());
@@ -70,6 +71,7 @@ public class HpcAttack {
     }
 
 	
+	@SuppressWarnings("unchecked")
 	private void generateFiguresCombinations() {
 		for (int L = 1; L < 25; L++)
 		{
