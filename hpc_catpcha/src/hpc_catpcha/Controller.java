@@ -20,19 +20,19 @@ public class Controller{
 		setShownCaptcha(null);
 	}
 	
-	Image getRandomCaptcha() {
+	public Image getRandomCaptcha() {
 		BufferedImage buff = new captchaGenerator().getCaptchaImage();
 		setShownCaptcha(buff);
 		return buff.getScaledInstance(196, 112,  0);
 	}
 	
-	Image getCaptchaFromString(String word) {
+	public Image getCaptchaFromString(String word) {
 		BufferedImage buff = new captchaGenerator().getCaptchaImageFromString(word);
 		setShownCaptcha(buff);
 		return buff.getScaledInstance(196, 112,  0);
 	}
 	
-	String attack(Integer threads) {
+	public String attack(Integer threads) {
 		HpcAttack atacante = new HpcAttack();
 		return atacante.attack(shownCaptcha,threads);
 	}
