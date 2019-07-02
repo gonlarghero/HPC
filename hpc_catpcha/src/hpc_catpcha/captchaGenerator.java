@@ -61,7 +61,10 @@ public class captchaGenerator {
 			finalString.append(word);
 			float spaceForLetters = -horizMargin * 2 + width;
 			float spacePerChar = spaceForLetters / (word.length() - 1.0f);
-
+			
+			/******TEST *******/
+			HpcAttack.test.clear();
+			
 			for (int i = 0; i < word.length(); i++) {
 				char characterToShow = word.charAt(i);
 				// this is a separate canvas used for the character so that
@@ -74,8 +77,11 @@ public class captchaGenerator {
 				charGraphics.translate(halfCharDim, halfCharDim);
 				double angle = (Math.random() - 0.5) * rotationRange;
 				angle = Math.floor(angle * 10) / 10;
+				
+				/******TEST *******/
 				HpcAttack.test.add(angle);
 				System.out.print(angle + "\n");
+				
 				charGraphics.transform(AffineTransform.getRotateInstance(angle));
 				charGraphics.translate(-halfCharDim, -halfCharDim);
 				charGraphics.setColor(textColor);

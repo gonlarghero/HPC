@@ -154,8 +154,9 @@ public class HpcAttack {
 							BufferedImage generatedImage = captchaGenerator.getCaptchaImageFromString(word, squares, rotations);
 							if (rotations.get(0).equals(test.get(0)) && rotations.get(1).equals(test.get(1)) && rotations.get(2).equals(test.get(2))) {
 								System.out.print("es este \n");
+								imprimirDiferencias(generatedImage,image);
 							}
-							if (compareImages(generatedImage, image))
+							if (compareImages(image,generatedImage))
 							{
 								found = true;
 								foundWord = word;
@@ -167,6 +168,36 @@ public class HpcAttack {
 			}
 		}
 		
+		private void imprimirDiferencias(BufferedImage generatedImage, BufferedImage image) {
+			if (!(generatedImage.getAccelerationPriority() == image.getAccelerationPriority())) {
+				System.out.print("Diferent accelerationPriority \n");
+			}
+			if (!generatedImage.getColorModel().equals(image.getColorModel())) {
+				System.out.print("Diferent color model \n");
+			}
+			if (!generatedImage.getData().equals(image.getData())) {
+				System.out.print("Diferent data \n");
+			}
+			if (!generatedImage.getGraphics().equals(image.getGraphics())) {
+				System.out.print("Diferent graphics \n");
+			}
+			if (!(generatedImage.getHeight() == image.getHeight())) {
+				System.out.print("Diferent height \n");
+			}
+			if (!generatedImage.getRaster().equals(image.getRaster())) {
+				System.out.print("Diferent raster \n");
+			}
+			if (!generatedImage.getSampleModel().equals(image.getSampleModel())) {
+				System.out.print("Diferent samplemodel \n");
+			}
+			if (!(generatedImage.getType() == image.getType())) {
+				System.out.print("Diferent type \n");
+			}
+			if (!(generatedImage.getWidth() == image.getWidth())) {
+				System.out.print("Diferent WIDTH \n");
+			}
+		}
+
 		public boolean compareImages(BufferedImage imgA, BufferedImage imgB) {
 			  // The images must be the same size.
 			  if (imgA.getWidth() != imgB.getWidth() || imgA.getHeight() != imgB.getHeight()) {
