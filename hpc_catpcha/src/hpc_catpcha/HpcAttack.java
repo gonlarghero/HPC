@@ -14,22 +14,24 @@ import java.util.concurrent.Semaphore;
 
 public class HpcAttack {
 	
-	BufferedImage image;
-	List<String> wordList;
-	int currentWord = 0;
-	int jobSize = 1;
-	int wordCount;
-	boolean found;
-	String foundWord = "noup";
-	ArrayList<Slave> threadList;
-    Semaphore mutex = new Semaphore(1);
-    Map<Integer, List<String>> slavesJob = new HashMap<Integer, List<String>>();
-    ArrayList<ArrayList<ArrayList<Double>>> angleCombinations = new ArrayList<ArrayList<ArrayList<Double>>>();
-    ArrayList<ArrayList<ArrayList<Integer>>> figuresCombinations = new ArrayList<ArrayList<ArrayList<Integer>>>();
+	private BufferedImage image;
+	private List<String> wordList;
+	private int currentWord = 0;
+	private int jobSize = 1;
+	private int wordCount;
+	private String foundWord = "noup";
+	private boolean found;
+	private ArrayList<Slave> threadList;
+	private  Semaphore mutex = new Semaphore(1);
+	private  Map<Integer, List<String>> slavesJob = new HashMap<Integer, List<String>>();
+	private ArrayList<ArrayList<ArrayList<Double>>> angleCombinations = new ArrayList<ArrayList<ArrayList<Double>>>();
+	private ArrayList<ArrayList<ArrayList<Integer>>> figuresCombinations = new ArrayList<ArrayList<ArrayList<Integer>>>();
     
-	String attack(BufferedImage img,Integer threadCount) throws IOException {	
+	public static ArrayList<Double> test = new ArrayList<>();
+	
+	public String attack(BufferedImage img,Integer threadCount) throws IOException {	
 		image = img;
-		wordList = readFile();
+		wordList = readFile("/dictionary.txt");
 		wordCount = wordList.size(); 
 		generateAngleCombinations();
 		generateFiguresCombinations();
@@ -44,7 +46,6 @@ public class HpcAttack {
 			Thread.sleep(1000000);
 			return "hola";
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return "hola";
 		}
@@ -72,7 +73,6 @@ public class HpcAttack {
     }
 
 	
-	@SuppressWarnings("unchecked")
 	private void generateFiguresCombinations() throws IOException {
 		ArrayList<String> positions = readFile("/noise-positions.txt");
 		for (int i = 0; i < positions.size(); i++)
@@ -96,7 +96,7 @@ public class HpcAttack {
 		
 	}
 	
-	List<String> getJob(int currentThread){
+	private List<String> getJob(int currentThread){
 		try {
 			mutex.acquire();
 			
@@ -114,24 +114,6 @@ public class HpcAttack {
 		}
 	}
 
-	ArrayList<String> readFile() {
-		try {
-			InputStream dictionary = new FileInputStream(captchaGenerator.class.getResource("/dictionary.txt").getPath()); 
-	        BufferedReader buf = new BufferedReader(new InputStreamReader(dictionary));
-	        String line = buf.readLine();
-	        ArrayList<String> wordList = new ArrayList<String>();
-	        while (line != null) {
-	        	wordList.add(line);
-	        	line = buf.readLine();
-	        }
-	        buf.close();
-	        return wordList;
-
-		}catch(Exception e) {
-			return new ArrayList<String>();
-		}	
-	}
-	
 	private static ArrayList<String> readFile(String name) throws IOException {
 		ArrayList<String> wordList = new ArrayList<String>();
 		InputStream is = new FileInputStream(captchaGenerator.class.getResource(name).getPath());
@@ -170,6 +152,9 @@ public class HpcAttack {
 							ArrayList<Double> rotations = angleCombinations.get(word.length() - 1).get(k);
 							ArrayList<ArrayList<Integer>> squares = figuresCombinations.get(j);
 							BufferedImage generatedImage = captchaGenerator.getCaptchaImageFromString(word, squares, rotations);
+							if (rotations.get(0).equals(test.get(0)) && rotations.get(1).equals(test.get(1)) && rotations.get(2).equals(test.get(2))) {
+								System.out.print("es este \n");
+							}
 							if (compareImages(generatedImage, image))
 							{
 								found = true;

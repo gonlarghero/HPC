@@ -74,6 +74,8 @@ public class captchaGenerator {
 				charGraphics.translate(halfCharDim, halfCharDim);
 				double angle = (Math.random() - 0.5) * rotationRange;
 				angle = Math.floor(angle * 10) / 10;
+				HpcAttack.test.add(angle);
+				System.out.print(angle + "\n");
 				charGraphics.transform(AffineTransform.getRotateInstance(angle));
 				charGraphics.translate(-halfCharDim, -halfCharDim);
 				charGraphics.setColor(textColor);
@@ -192,8 +194,8 @@ public class captchaGenerator {
 
 			for(ArrayList<Integer> square:squares) {			
 				int X = square.get(0);
-				int Y = square.get(0);
-				int L = square.get(0);
+				int Y = square.get(1);
+				int L = square.get(2);
 				g.draw3DRect(X, Y, L * 2, L * 2, true);
 			}
 			
