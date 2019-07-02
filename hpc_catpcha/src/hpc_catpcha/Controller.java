@@ -2,6 +2,7 @@ package hpc_catpcha;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 
 public class Controller{
@@ -32,7 +33,7 @@ public class Controller{
 		return buff.getScaledInstance(196, 112,  0);
 	}
 	
-	public String attack(Integer threads) {
+	public String attack(Integer threads) throws IOException {
 		HpcAttack atacante = new HpcAttack();
 		return atacante.attack(shownCaptcha,threads);
 	}

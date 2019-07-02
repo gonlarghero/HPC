@@ -174,7 +174,7 @@ public class captchaGenerator {
 		}
 	}
 
-	public static BufferedImage getCaptchaImageFromString(String word, int	index,ArrayList<Double> rotations) {
+	public static BufferedImage getCaptchaImageFromString(String word, ArrayList<ArrayList<Integer>> squares, ArrayList<Double> rotations) {
 		try {
 			Color backgroundColor = Color.white;
 			Color borderColor = Color.black;
@@ -190,15 +190,10 @@ public class captchaGenerator {
 			g.fillRect(0, 0, width, height);
 			g.setColor(circleColor);
 
-			ArrayList<String> positions = readFile("/noise-positions.txt");
-			String chosePos = positions.get(index);
-			String[] pos = chosePos.split(":");
-			String[] aux;
-			for(String s:pos) {
-				aux = s.split(",");				
-				int X = Integer.parseInt(aux[0]);
-				int Y = Integer.parseInt(aux[1]);
-				int L = Integer.parseInt(aux[2]);
+			for(ArrayList<Integer> square:squares) {			
+				int X = square.get(0);
+				int Y = square.get(0);
+				int L = square.get(0);
 				g.draw3DRect(X, Y, L * 2, L * 2, true);
 			}
 			
@@ -263,16 +258,4 @@ public class captchaGenerator {
 	public String getCaptchaString() {
 		return captchaString;
 	}
-	
-	// lets make some noisey circles
-	/*int circlesToDraw = 25;			
-	for (int i = 0; i < circlesToDraw; i++) {
-		int L = (int) (Math.random() * height / 2.0);
-		int X = (int) (Math.random() * width - L);
-		int Y = (int) (Math.random() * height - L);
-		g.draw3DRect(X, Y, L * 2, L * 2, true);
-		System.out.print(Integer.toString(X) + "," + Integer.toString(Y) +
-				 "," + Integer.toString(L) + ":");
-	} System.out.println("");
-	*/	
 }

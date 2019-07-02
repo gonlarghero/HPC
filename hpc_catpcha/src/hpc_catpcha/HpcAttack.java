@@ -3,6 +3,7 @@ package hpc_catpcha;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -23,15 +24,14 @@ public class HpcAttack {
 	ArrayList<Slave> threadList;
     Semaphore mutex = new Semaphore(1);
     Map<Integer, List<String>> slavesJob = new HashMap<Integer, List<String>>();
-    ArrayList<ArrayList<ArrayList<Double>>> sizeCombinations;
-    ArrayList<ArrayList<Integer>> figuresCombinations = new ArrayList<ArrayList<Integer>>();
+    ArrayList<ArrayList<ArrayList<Double>>> angleCombinations = new ArrayList<ArrayList<ArrayList<Double>>>();
+    ArrayList<ArrayList<ArrayList<Integer>>> figuresCombinations = new ArrayList<ArrayList<ArrayList<Integer>>>();
     
-	String attack(BufferedImage img,Integer threadCount) {	
+	String attack(BufferedImage img,Integer threadCount) throws IOException {	
 		image = img;
 		wordList = readFile();
 		wordCount = wordList.size(); 
-		sizeCombinations = new ArrayList<ArrayList<ArrayList<Double>>>();
-		generateSizeCombinations();
+		generateAngleCombinations();
 		generateFiguresCombinations();
 		threadList = new ArrayList<Slave>();
 		found = false;
@@ -50,51 +50,59 @@ public class HpcAttack {
 		}
 	}
 	
-	private void generateSizeCombinations() {
+	private void generateAngleCombinations() {
 		for (int i = 1; i < 4; i++) {
-			sizeCombinations.add(new ArrayList<ArrayList<Double>>());
-			generateSizeCombinations(new ArrayList<Double>(), 0, i); 
+			angleCombinations.add(new ArrayList<ArrayList<Double>>());
+			generateAngleCombinations(new ArrayList<Double>(), 0, i); 
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void generateSizeCombinations(ArrayList<Double> list, int n, int lenght) {
+	public void generateAngleCombinations(ArrayList<Double> list, int n, int lenght) {
         if (n == lenght) {
-        	sizeCombinations.get(lenght - 1).add((ArrayList<Double>)list.clone());
+        	angleCombinations.get(lenght - 1).add((ArrayList<Double>)list.clone());
         	return;
         }
         for (double rotation = -0.4; rotation < 0.5; rotation = rotation + 0.1) {
+			rotation = Math.round(rotation * 10) / 10.0;
         	list.add(rotation);
-        	generateSizeCombinations(list, n + 1, lenght);
+        	generateAngleCombinations(list, n + 1, lenght);
         	list.remove(rotation);
         }
     }
 
 	
 	@SuppressWarnings("unchecked")
-	private void generateFiguresCombinations() {
-		for (int L = 1; L < 25; L++)
+	private void generateFiguresCombinations() throws IOException {
+		ArrayList<String> positions = readFile("/noise-positions.txt");
+		for (int i = 0; i < positions.size(); i++)
 		{
-			for (int X = 1; X < 160 - L; X++)
-			{
-				for (int Y = 1; Y < 50 - L; Y++)
-				{
-					ArrayList<Integer> combinations = new ArrayList<Integer>();
-					combinations.add(0, L);
-					combinations.add(1, X);
-					combinations.add(2, Y);
-					figuresCombinations.add((ArrayList<Integer>)combinations.clone());
-				}
+			ArrayList<ArrayList<Integer>> squares = new ArrayList<ArrayList<Integer>>();
+			String chosePos = positions.get(i);
+			String[] pos = chosePos.split(":");
+			String[] aux;
+			int index = 0;
+			for(String s:pos) {
+				ArrayList<Integer> coords = new ArrayList<Integer>();
+				aux = s.split(",");	
+				coords.add(0, Integer.parseInt(aux[0]));
+				coords.add(1, Integer.parseInt(aux[1]));
+				coords.add(2, Integer.parseInt(aux[2]));
+				squares.add(index, coords);
+				index++;				
 			}
+			figuresCombinations.add(i,squares);
 		}
+		
 	}
 	
 	List<String> getJob(int currentThread){
 		try {
 			mutex.acquire();
 			
-			List<String> job = wordList.subList(0, jobSize);
+			List<String> job = wordList.subList(currentWord, currentWord + jobSize);
 			slavesJob.put(currentThread, job);
+			currentWord = currentWord + jobSize;
 			
 			mutex.release();
 			
@@ -124,6 +132,20 @@ public class HpcAttack {
 		}	
 	}
 	
+	private static ArrayList<String> readFile(String name) throws IOException {
+		ArrayList<String> wordList = new ArrayList<String>();
+		InputStream is = new FileInputStream(captchaGenerator.class.getResource(name).getPath());
+		BufferedReader buf = new BufferedReader(new InputStreamReader(is));
+		String line = buf.readLine();
+
+		while (line != null) {
+			wordList.add(line);
+			line = buf.readLine();
+		}
+		buf.close();
+		return wordList;
+	}
+	
 	public class Slave implements Runnable {
 		Thread t;
 		int id;
@@ -144,13 +166,11 @@ public class HpcAttack {
 					String word = currentJob.get(i);
 					for (int j = 0; j < figuresCombinations.size(); j++)
 					{
-						for (int k = 0; k < sizeCombinations.get(word.length() - 1).size(); k++) {
-							Integer L = figuresCombinations.get(j).get(0);
-							Integer X = figuresCombinations.get(j).get(1);
-							Integer Y = figuresCombinations.get(j).get(2);
-							ArrayList<Double> rotations = sizeCombinations.get(word.length() - 1).get(k);
-							BufferedImage generatedImage = captchaGenerator.getCaptchaImageFromString(word, L, X, Y, rotations);
-							if (generatedImage.equals(image))
+						for (int k = 0; k < angleCombinations.get(word.length() - 1).size(); k++) {
+							ArrayList<Double> rotations = angleCombinations.get(word.length() - 1).get(k);
+							ArrayList<ArrayList<Integer>> squares = figuresCombinations.get(j);
+							BufferedImage generatedImage = captchaGenerator.getCaptchaImageFromString(word, squares, rotations);
+							if (compareImages(generatedImage, image))
 							{
 								found = true;
 								foundWord = word;
@@ -158,7 +178,30 @@ public class HpcAttack {
 						}
 					}
 				}
+				currentJob = getJob(id);
 			}
 		}
+		
+		public boolean compareImages(BufferedImage imgA, BufferedImage imgB) {
+			  // The images must be the same size.
+			  if (imgA.getWidth() != imgB.getWidth() || imgA.getHeight() != imgB.getHeight()) {
+			    return false;
+			  }
+
+			  int width  = imgA.getWidth();
+			  int height = imgA.getHeight();
+
+			  // Loop over every pixel.
+			  for (int y = 0; y < height; y++) {
+			    for (int x = 0; x < width; x++) {
+			      // Compare the pixels for equality.
+			      if (imgA.getRGB(x, y) != imgB.getRGB(x, y)) {
+			        return false;
+			      }
+			    }
+			  }
+
+			  return true;
+			}
 	}
 }
