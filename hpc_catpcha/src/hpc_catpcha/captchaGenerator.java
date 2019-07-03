@@ -34,7 +34,7 @@ public class captchaGenerator {
 			g.fillRect(0, 0, width, height);
 			g.setColor(circleColor);
 			
-			ArrayList<String> positions = readFile("/noise-positions.txt");
+			ArrayList<String> positions = readFile("/noise-positions2.txt");
 			index = (int) (Math.random() * positions.size());
 			String chosePos = positions.get(index);
 			String[] pos = chosePos.split(":");

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
 public class HpcAttack {
@@ -29,7 +30,7 @@ public class HpcAttack {
     
 	public static ArrayList<Double> test = new ArrayList<>();
 	
-	public String attack(BufferedImage img,Integer threadCount) throws IOException {	
+	public String attack(BufferedImage img, Integer threadCount) throws IOException {	
 		image = img;
 		wordList = readFile("/dictionary.txt");
 		wordCount = wordList.size(); 
@@ -37,22 +38,23 @@ public class HpcAttack {
 		generateFiguresCombinations();
 		threadList = new ArrayList<Slave>();
 		found = false;
+		CountDownLatch latch = new CountDownLatch(threadCount);
 		
 		for (int i = 0; i < threadCount; i++) {
-			threadList.add(new Slave(i));
+			threadList.add(new Slave(i, latch));
 		}
 		
 		 try {
-			Thread.sleep(1000000);
-			return "hola";
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			return "hola";
+			latch.await();
+			return foundWord;
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+			return foundWord;
 		}
 	}
 	
 	private void generateAngleCombinations() {
-		for (int i = 1; i < 4; i++) {
+		for (int i = 1; i < 7; i++) {
 			angleCombinations.add(new ArrayList<ArrayList<Double>>());
 			generateAngleCombinations(new ArrayList<Double>(), 0, i); 
 		}
@@ -64,17 +66,16 @@ public class HpcAttack {
         	angleCombinations.get(lenght - 1).add((ArrayList<Double>)list.clone());
         	return;
         }
-        for (double rotation = -0.4; rotation < 0.5; rotation = rotation + 0.1) {
+        for (double rotation = -0.4; rotation < 0.4; rotation = rotation + 0.1) {
 			rotation = Math.round(rotation * 10) / 10.0;
         	list.add(rotation);
         	generateAngleCombinations(list, n + 1, lenght);
         	list.remove(rotation);
         }
     }
-
 	
 	private void generateFiguresCombinations() throws IOException {
-		ArrayList<String> positions = readFile("/noise-positions.txt");
+		ArrayList<String> positions = readFile("/noise-positions2.txt");
 		for (int i = 0; i < positions.size(); i++)
 		{
 			ArrayList<ArrayList<Integer>> squares = new ArrayList<ArrayList<Integer>>();
@@ -100,9 +101,21 @@ public class HpcAttack {
 		try {
 			mutex.acquire();
 			
-			List<String> job = wordList.subList(currentWord, currentWord + jobSize);
-			slavesJob.put(currentThread, job);
-			currentWord = currentWord + jobSize;
+			List<String> job = new ArrayList<String>();
+			
+			if (!found)
+			{
+				Integer limit;
+				if (currentWord + jobSize <= wordList.size()) {
+					limit = currentWord + jobSize;
+				}
+				else {
+					limit = wordList.size();
+				}
+				job = wordList.subList(currentWord, limit);
+				slavesJob.put(currentThread, job);
+				currentWord = limit;
+			}			
 			
 			mutex.release();
 			
@@ -132,9 +145,11 @@ public class HpcAttack {
 		Thread t;
 		int id;
 		List<String> currentJob;
+		CountDownLatch latch;
 		   
-		Slave(int threadId){
+		Slave(int threadId, CountDownLatch latch){
 		    id = threadId; 
+	        this.latch = latch;
 		    t = new Thread(this, Integer.toString(id));
 		    t.start();
 		}
@@ -143,19 +158,16 @@ public class HpcAttack {
 			currentJob = getJob(id);
 			while (currentJob.size() > 0 && !found)
 			{
-				for (int i = 0; i < currentJob.size(); i++)
+				for (int i = 0; !found && i < currentJob.size(); i++)
 				{
 					String word = currentJob.get(i);
-					for (int j = 0; j < figuresCombinations.size(); j++)
+					for (int j = 0; !found && j < figuresCombinations.size(); j++)
 					{
-						for (int k = 0; k < angleCombinations.get(word.length() - 1).size(); k++) {
+						for (int k = 0; !found && k < angleCombinations.get(word.length() - 1).size(); k++) {
 							ArrayList<Double> rotations = angleCombinations.get(word.length() - 1).get(k);
 							ArrayList<ArrayList<Integer>> squares = figuresCombinations.get(j);
 							BufferedImage generatedImage = captchaGenerator.getCaptchaImageFromString(word, squares, rotations);
-							if (rotations.get(0).equals(test.get(0)) && rotations.get(1).equals(test.get(1)) && rotations.get(2).equals(test.get(2))) {
-								System.out.print("es este \n");
-								imprimirDiferencias(generatedImage,image);
-							}
+
 							if (compareImages(image,generatedImage))
 							{
 								found = true;
@@ -166,38 +178,9 @@ public class HpcAttack {
 				}
 				currentJob = getJob(id);
 			}
+			latch.countDown();
 		}
 		
-		private void imprimirDiferencias(BufferedImage generatedImage, BufferedImage image) {
-			if (!(generatedImage.getAccelerationPriority() == image.getAccelerationPriority())) {
-				System.out.print("Diferent accelerationPriority \n");
-			}
-			if (!generatedImage.getColorModel().equals(image.getColorModel())) {
-				System.out.print("Diferent color model \n");
-			}
-			if (!generatedImage.getData().equals(image.getData())) {
-				System.out.print("Diferent data \n");
-			}
-			if (!generatedImage.getGraphics().equals(image.getGraphics())) {
-				System.out.print("Diferent graphics \n");
-			}
-			if (!(generatedImage.getHeight() == image.getHeight())) {
-				System.out.print("Diferent height \n");
-			}
-			if (!generatedImage.getRaster().equals(image.getRaster())) {
-				System.out.print("Diferent raster \n");
-			}
-			if (!generatedImage.getSampleModel().equals(image.getSampleModel())) {
-				System.out.print("Diferent samplemodel \n");
-			}
-			if (!(generatedImage.getType() == image.getType())) {
-				System.out.print("Diferent type \n");
-			}
-			if (!(generatedImage.getWidth() == image.getWidth())) {
-				System.out.print("Diferent WIDTH \n");
-			}
-		}
-
 		public boolean compareImages(BufferedImage imgA, BufferedImage imgB) {
 			  // The images must be the same size.
 			  if (imgA.getWidth() != imgB.getWidth() || imgA.getHeight() != imgB.getHeight()) {
