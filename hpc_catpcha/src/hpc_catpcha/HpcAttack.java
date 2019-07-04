@@ -22,7 +22,7 @@ public class HpcAttack {
 	private int wordCount;
 	private int wordLength = 4;
 	private String foundWord = "noup";
-	private boolean found;
+	private static boolean found = false;
 	private ArrayList<Slave> threadList;
 	private Semaphore mutex = new Semaphore(1);
 	private Map<Integer, List<String>> slavesJob = new HashMap<Integer, List<String>>();
@@ -38,7 +38,6 @@ public class HpcAttack {
 		generateAngleCombinations(wordLength);
 		generateFiguresCombinations();
 		threadList = new ArrayList<Slave>();
-		found = false;
 		CountDownLatch latch = new CountDownLatch(threadCount);
 		
 		for (int i = 0; i < threadCount; i++) {
@@ -53,15 +52,7 @@ public class HpcAttack {
 			return foundWord;
 		}
 	}
-	
-	public static Integer progress() {
-		if (currentWord != null && wordList != null && wordList.size() != 0) {
-			return (currentWord * 100 / wordList.size());
-		}else {
-			return 0;
-		}		
-	}
-	
+		
 	private ArrayList<ArrayList<Double>> generateAngleCombinations(int wordLength) {
 		ArrayList<ArrayList<Double>> ret = new ArrayList<>();
 		if(wordLength != 1) {			
@@ -216,5 +207,29 @@ public class HpcAttack {
 
 			  return true;
 			}
+	}
+
+	public static Integer getCurrentWord() {
+		return currentWord;
+	}
+
+	public static void setCurrentWord(Integer currentWord) {
+		HpcAttack.currentWord = currentWord;
+	}
+
+	public static List<String> getWordList() {
+		return wordList;
+	}
+
+	public static void setWordList(List<String> wordList) {
+		HpcAttack.wordList = wordList;
+	}
+
+	public static boolean isFound() {
+		return found;
+	}
+
+	public static void setFound(boolean found) {
+		HpcAttack.found = found;
 	}
 }

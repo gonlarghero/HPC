@@ -2,18 +2,26 @@ package hpc_catpcha;
 
 import java.awt.EventQueue;
 import java.awt.Image;
+import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.List;
+import java.util.Random;
 import java.awt.event.ActionEvent;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import java.awt.Color;
+import java.awt.Cursor;
+
 import javax.swing.UIManager;
 import javax.swing.JProgressBar;
 
@@ -22,6 +30,15 @@ public class window {
 	private JFrame frame;
 	private JTextField textField;
 	private JProgressBar progressBar;
+	JButton startButton;
+	private pbHandler pbHnd;
+		
+	public void propertyChange(PropertyChangeEvent evt) {
+        if ("progress" == evt.getPropertyName()) {
+            int progress = (Integer) evt.getNewValue();
+            progressBar.setValue(progress);
+        } 
+    }
 
 	/**
 	 * Launch the application.
@@ -39,22 +56,6 @@ public class window {
 		});
 	}
 	
-	private Thread progress = new Thread() {
-		public void run() {
-			Integer per = HpcAttack.progress();
-			while(!per.equals(100)) {
-				try {
-					progressBar.setValue(per);
-					Thread.sleep(100);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-	};
-	
-
 	/**
 	 * Create the application.
 	 */
@@ -67,6 +68,7 @@ public class window {
 	 */
 	private void initialize() {
 		Controller c = Controller.getInstance();
+		
 		
 		frame = new JFrame();
 		frame.setBounds(100, 100, 450, 300);
@@ -108,32 +110,44 @@ public class window {
 		buttonGenerate.setBounds(156, 145, 89, 23);
 		frame.getContentPane().add(buttonGenerate);
 		
-		JButton btnNewButton = new JButton("ATACAR");
-		btnNewButton.setBackground(new Color(250, 128, 114));
-		btnNewButton.addActionListener(new ActionListener() {
+		progressBar = new JProgressBar();		
+		progressBar.setBounds(33, 224, 212, 14);
+		frame.getContentPane().add(progressBar);
+		
+		
+		startButton = new JButton("ATACAR");
+		startButton.setBackground(new Color(250, 128, 114));
+		startButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String result = null;
-				progress.start();
+				String result = null;			
+
+				startButton.setEnabled(false);
+				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		        
+				pbHnd = new pbHandler(progressBar);
+				pbHnd.start();			
 				try {
 					result = c.attack(1);
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				try {
-					progress.join();
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+				Toolkit.getDefaultToolkit().beep();
+	            startButton.setEnabled(true);
+	            frame.setCursor(null);
 				JOptionPane.showMessageDialog(null, result, "Resultado", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
-		btnNewButton.setBounds(33, 177, 97, 36);
-		frame.getContentPane().add(btnNewButton);
+		startButton.setBounds(33, 177, 97, 36);
+		frame.getContentPane().add(startButton);
 		
-		progressBar = new JProgressBar();
-		progressBar.setBounds(33, 224, 212, 14);
-		frame.getContentPane().add(progressBar);
+	}
+
+	public JProgressBar getProgressBar() {
+		return progressBar;
+	}
+
+	public void setProgressBar(JProgressBar progressBar) {
+		this.progressBar = progressBar;
 	}
 }
