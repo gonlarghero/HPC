@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.beans.*;
+import java.io.IOException;
 import java.util.Random;
  
 public class ProgressBarDemo extends JPanel
@@ -13,8 +14,10 @@ public class ProgressBarDemo extends JPanel
  
     private JProgressBar progressBar;
     private JButton startButton;
-    private JTextArea taskOutput;
     private Task task;
+    private JButton btnRefresh;
+    private JLabel lblNewLabel;
+    private Controller c = Controller.getInstance();
  
     class Task extends SwingWorker<Void, Void> {
         /*
@@ -46,13 +49,11 @@ public class ProgressBarDemo extends JPanel
             Toolkit.getDefaultToolkit().beep();
             startButton.setEnabled(true);
             setCursor(null); //turn off the wait cursor
-            taskOutput.append("Done!\n");
         }
     }
  
     public ProgressBarDemo() {
         super(new BorderLayout());
- 
         //Create the demo's UI.
         startButton = new JButton("Start");
         startButton.setActionCommand("start");
@@ -62,17 +63,24 @@ public class ProgressBarDemo extends JPanel
         progressBar.setValue(0);
         progressBar.setStringPainted(true);
  
-        taskOutput = new JTextArea(5, 20);
-        taskOutput.setMargin(new Insets(5,5,5,5));
-        taskOutput.setEditable(false);
- 
         JPanel panel = new JPanel();
+        panel.setBounds(100, 100, 450, 300);
+        
+        btnRefresh = new JButton("Refresh");
+        btnRefresh.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		lblNewLabel.setIcon(new ImageIcon(c.getRandomCaptcha()));
+        	}
+        });
+        panel.add(btnRefresh);
         panel.add(startButton);
         panel.add(progressBar);
  
         add(panel, BorderLayout.PAGE_START);
-        add(new JScrollPane(taskOutput), BorderLayout.CENTER);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        lblNewLabel = new JLabel("");
+        add(lblNewLabel, BorderLayout.CENTER);
  
     }
  
@@ -81,12 +89,20 @@ public class ProgressBarDemo extends JPanel
      */
     public void actionPerformed(ActionEvent evt) {
         startButton.setEnabled(false);
+        String result = "";
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         //Instances of javax.swing.SwingWorker are not reusuable, so
         //we create new instances as needed.
         task = new Task();
         task.addPropertyChangeListener(this);
         task.execute();
+        /*try {
+			result = c.attack(1);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		JOptionPane.showMessageDialog(null, result, "Resultado", JOptionPane.INFORMATION_MESSAGE);*/
     }
  
     /**
@@ -96,8 +112,7 @@ public class ProgressBarDemo extends JPanel
         if ("progress" == evt.getPropertyName()) {
             int progress = (Integer) evt.getNewValue();
             progressBar.setValue(progress);
-            taskOutput.append(String.format(
-                    "Completed %d%% of task.\n", task.getProgress()));
+            
         } 
     }
  
