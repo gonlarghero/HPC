@@ -15,11 +15,13 @@ import javax.swing.JOptionPane;
 
 import java.awt.Color;
 import javax.swing.UIManager;
+import javax.swing.JProgressBar;
 
 public class window {
 
 	private JFrame frame;
 	private JTextField textField;
+	private JProgressBar progressBar;
 
 	/**
 	 * Launch the application.
@@ -36,6 +38,22 @@ public class window {
 			}
 		});
 	}
+	
+	private Thread progress = new Thread() {
+		public void run() {
+			Integer per = HpcAttack.progress();
+			while(!per.equals(100)) {
+				try {
+					progressBar.setValue(per);
+					Thread.sleep(100);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	};
+	
 
 	/**
 	 * Create the application.
@@ -82,7 +100,9 @@ public class window {
 		JButton buttonGenerate = new JButton("Generar");
 		buttonGenerate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				label.setIcon(new ImageIcon(c.getCaptchaFromString(textField.getText()))); 
+				if (textField.getText()!= null && textField.getText().trim() != "") {
+					label.setIcon(new ImageIcon(c.getCaptchaFromString(textField.getText()))); 
+				}
 			}
 		});
 		buttonGenerate.setBounds(156, 145, 89, 23);
@@ -93,9 +113,16 @@ public class window {
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String result = null;
+				progress.start();
 				try {
 					result = c.attack(1);
 				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				try {
+					progress.join();
+				} catch (InterruptedException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
@@ -104,5 +131,9 @@ public class window {
 		});
 		btnNewButton.setBounds(33, 177, 97, 36);
 		frame.getContentPane().add(btnNewButton);
+		
+		progressBar = new JProgressBar();
+		progressBar.setBounds(33, 224, 212, 14);
+		frame.getContentPane().add(progressBar);
 	}
 }

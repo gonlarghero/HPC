@@ -16,15 +16,16 @@ import java.util.concurrent.Semaphore;
 public class HpcAttack {
 	
 	private BufferedImage image;
-	private List<String> wordList;
-	private int currentWord = 0;
+	private static List<String> wordList;
+	private static Integer currentWord = 0;
 	private int jobSize = 1;
 	private int wordCount;
+	private int wordLength = 4;
 	private String foundWord = "noup";
 	private boolean found;
 	private ArrayList<Slave> threadList;
-	private  Semaphore mutex = new Semaphore(1);
-	private  Map<Integer, List<String>> slavesJob = new HashMap<Integer, List<String>>();
+	private Semaphore mutex = new Semaphore(1);
+	private Map<Integer, List<String>> slavesJob = new HashMap<Integer, List<String>>();
 	private ArrayList<ArrayList<ArrayList<Double>>> angleCombinations = new ArrayList<ArrayList<ArrayList<Double>>>();
 	private ArrayList<ArrayList<ArrayList<Integer>>> figuresCombinations = new ArrayList<ArrayList<ArrayList<Integer>>>();
     
@@ -34,7 +35,7 @@ public class HpcAttack {
 		image = img;
 		wordList = readFile("/dictionary.txt");
 		wordCount = wordList.size(); 
-		generateAngleCombinations();
+		generateAngleCombinations(wordLength);
 		generateFiguresCombinations();
 		threadList = new ArrayList<Slave>();
 		found = false;
@@ -53,26 +54,39 @@ public class HpcAttack {
 		}
 	}
 	
-	private void generateAngleCombinations() {
-		for (int i = 1; i < 7; i++) {
-			angleCombinations.add(new ArrayList<ArrayList<Double>>());
-			generateAngleCombinations(new ArrayList<Double>(), 0, i); 
-		}
+	public static Integer progress() {
+		if (currentWord != null && wordList != null && wordList.size() != 0) {
+			return (currentWord * 100 / wordList.size());
+		}else {
+			return 0;
+		}		
 	}
 	
-	@SuppressWarnings("unchecked")
-	public void generateAngleCombinations(ArrayList<Double> list, int n, int lenght) {
-        if (n == lenght) {
-        	angleCombinations.get(lenght - 1).add((ArrayList<Double>)list.clone());
-        	return;
-        }
-        for (double rotation = -0.4; rotation < 0.4; rotation = rotation + 0.1) {
-			rotation = Math.round(rotation * 10) / 10.0;
-        	list.add(rotation);
-        	generateAngleCombinations(list, n + 1, lenght);
-        	list.remove(rotation);
-        }
-    }
+	private ArrayList<ArrayList<Double>> generateAngleCombinations(int wordLength) {
+		ArrayList<ArrayList<Double>> ret = new ArrayList<>();
+		if(wordLength != 1) {			
+			ArrayList<ArrayList<Double>> aux = generateAngleCombinations(wordLength -1);
+			for(ArrayList<Double> r:aux) {
+				for (Double rotation = -0.4; rotation < 0.4; rotation = rotation + 0.1) {
+					Double rotation_clean = Math.round(rotation * 10) / 10.0;
+					@SuppressWarnings("unchecked")
+					ArrayList<Double> clone = (ArrayList<Double>) r.clone();
+					clone.add(rotation_clean);
+					ret.add(clone);
+				}
+			}
+		}else {		
+			for (double rotation = -0.4; rotation < 0.4; rotation = rotation + 0.1) {
+				ArrayList<Double> clone = new ArrayList<>();
+				Double rotation_clean = Math.round(rotation * 10) / 10.0;
+				clone.add(rotation_clean);
+				ret.add(clone);
+			}
+			
+		}
+		angleCombinations.add(ret);
+		return ret;
+	}
 	
 	private void generateFiguresCombinations() throws IOException {
 		ArrayList<String> positions = readFile("/noise-positions2.txt");
